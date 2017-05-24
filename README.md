@@ -1,3 +1,4 @@
+
 # LFWin32
 Lightweight c++14 Windows GUI controls wrapper
 
@@ -14,3 +15,6 @@ Lightweight c++14 Windows GUI controls wrapper
 * Utilise signal-slot mechanism to decouple event handlers from their sources
 * Use Win32 API constants and types so documentation is easy to find
 * Support GUI controls
+
+# Implementation
+* Single header file
