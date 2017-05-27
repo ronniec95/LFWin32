@@ -12,11 +12,18 @@ Lightweight c++14 Windows GUI controls wrapper
 As a side effect, given the light weight nature of these wrappers, it can serve as a introduction to the win32 controls
 
 # Design
-* There should be 0 overhead beyond calling the win32 calls if at all possible. No vtables, no multiple indirections. Constexpr and template metaprogramming to do as much as possible at compile time.
+* There should be 0 overhead beyond calling the win32 calls if at all possible. No vtables, no multiple indirections. Constexpr and template metaprogramming to do as much as possible at compile time. 
+* Use static asserts wherever possible
+* As much logging as possible in debug mode, but __noop in release
 * Fluent style API to configure controls 
 * Utilise signal-slot mechanism to decouple event handlers from their sources
 * Use Win32 API constants and types so documentation is easy to find
-* Support GUI controls
-
+* Support GUI controls such as filedialog
+ 
 # Implementation
 * Single header file
+
+# Long term plan
+* Add Direct2d and Direct3d charting, a 3d performant graph would be really useful
+* Create an excel like grid based on list box and HeaderControl
+
