@@ -9,6 +9,8 @@ Lightweight c++14 Windows GUI controls wrapper
 * The MFC and WTL APIs are great but C++ has moved on. I want functional style interface with minimal thinking needed
 * GUI libraries for window are either MFC, WTL or directly Win32. To really utilise MFC or WTL you need to understand the Win32 API as they are all based off that.
 
+As a side effect, given the light weight nature of these wrappers, it can serve as a introduction to the win32 controls
+
 # Design
 * There should be 0 overhead beyond calling the win32 calls if at all possible. No vtables, no multiple indirections. Constexpr and template metaprogramming to do as much as possible at compile time.
 * Fluent style API to configure controls 
