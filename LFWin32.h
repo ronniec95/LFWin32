@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <Windowsx.h>
 #include <CommCtrl.h>
+#include <Strsafe.h>
 #include <vector>
 #include <functional>
 #include <algorithm>
@@ -436,8 +437,8 @@ private: \
 		}
 
 		void create(T&t) {
-			assert(nullptr != t.classname);
-			assert(0 != t.window_style.style());
+			TRACE(nullptr != t.classname, "No classname set for window");
+			TRACE(0 != t.window_style.style(), "Window style is not set");
 			t.wc.cbSize = sizeof(WNDCLASSEX);
 			t.wc.style = t.class_style.style();
 			t.wc.lpfnWndProc = &MessageHandler;
@@ -491,139 +492,11 @@ private: \
 		}
 	}
 
-	namespace Menu {
-		struct T
-		{
-			std::vector<T> children;
-		};
-	}
-
-	namespace StatusBar {
-		struct T
-		{
-			T(HWND hwnd) : parent(hwnd) {}
-			const HWND parent;
-			HWND hwnd = nullptr;
-			DWORD style = 0;
-			std::vector<std::pair<int, LPCWSTR>> m_parts;
-		};
-
-		inline auto init(const HWND hwnd) -> T {
-			return T(hwnd);
-		}
-
-		inline void add_part(T& statusbar, const int size, LPCWSTR text) {
-			statusbar.m_parts.emplace_back(size, text);
-		}
-
-		// Styles for status bar
-		//The window styles
-		void window_style(T&t, Window::Style& ws) { t.style ^= ws.style(); }
-		// The status bar control will include a sizing grip at the right end of the status bar. A sizing grip is similar to a sizing border; it is a rectangular area that the user can click and drag to resize the parent window. 
-		void sbars_sizegrip(T&t) { t.style ^= SBARS_SIZEGRIP; }
-		// Enable status bar tooltips
-		void sbars_tooltips(T&t) { t.style ^= SBARS_TOOLTIPS; }
-
-		// Messages
-		//Retrieves the current widths of the horizontal and vertical borders of a status window.
-		template<typename WP, typename LP> LRESULT sb_getborders(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETBORDERS, (WPARAM)w, (LPARAM)p); }
-		//Retrieves the icon for a part in a status bar.
-		template<typename WP, typename LP> LRESULT sb_geticon(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETICON, (WPARAM)w, (LPARAM)p); }
-		//Retrieves a count of the parts in a status window. The message also retrieves the coordinate of the right edge of the specified number of parts.
-		template<typename WP, typename LP> LRESULT sb_getparts(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETPARTS, (WPARAM)w, (LPARAM)p); }
-		//Retrieves the bounding rectangle of a part in a status window.
-		template<typename WP, typename LP> LRESULT sb_getrect(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETRECT, (WPARAM)w, (LPARAM)p); }
-		//The SB_GETTEXT message retrieves the text from the specified part of a status window.
-		template<typename WP, typename LP> LRESULT sb_gettext(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETTEXT, (WPARAM)w, (LPARAM)p); }
-		//The SB_GETTEXTLENGTH message retrieves the length, in characters, of the text from the specified part of a status window.
-		template<typename WP, typename LP> LRESULT sb_gettextlength(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETTEXTLENGTH, (WPARAM)w, (LPARAM)p); }
-		//Retrieves the tooltip text for a part in a status bar. The status bar must be created with the SBT_TOOLTIPS style to enable tooltips.
-		template<typename WP, typename LP> LRESULT sb_gettiptext(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETTIPTEXT, (WPARAM)w, (LPARAM)p); }
-		//Retrieves the Unicode character format flag for the control.
-		template<typename WP, typename LP> LRESULT sb_getunicodeformat(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETUNICODEFORMAT, (WPARAM)w, (LPARAM)p); }
-		//Checks a status bar control to determine if it is in simple mode.
-		template<typename WP, typename LP> LRESULT sb_issimple(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_ISSIMPLE, (WPARAM)w, (LPARAM)p); }
-		//Sets the background color in a status bar.
-		template<typename WP, typename LP> void sb_setbkcolor(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETBKCOLOR, (WPARAM)w, (LPARAM)p); }
-		//Sets the icon for a part in a status bar.
-		template<typename WP, typename LP> void sb_seticon(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETICON, (WPARAM)w, (LPARAM)p); }
-		//Sets the minimum height of a status window's drawing area.
-		template<typename WP, typename LP> void sb_setminheight(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETMINHEIGHT, (WPARAM)w, (LPARAM)p); }
-		//Sets the number of parts in a status window and the coordinate of the right edge of each part.
-		template<typename WP, typename LP> void sb_setparts(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETPARTS, (WPARAM)w, (LPARAM)p); }
-		//The SB_SETTEXT message sets the text in the specified part of a status window.
-		template<typename WP, typename LP> void sb_settext(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETTEXT, (WPARAM)w, (LPARAM)p); }
-		//Sets the tooltip text for a part in a status bar. The status bar must have been created with the SBT_TOOLTIPS style to enable tooltips.
-		template<typename WP, typename LP> void sb_settiptext(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETTIPTEXT, (WPARAM)w, (LPARAM)p); }
-		//Sets the Unicode character format flag for the control. This message allows you to change the character set used by the control at run time rather than having to re-create the control.
-		template<typename WP, typename LP> void sb_setunicodeformat(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETUNICODEFORMAT, (WPARAM)w, (LPARAM)p); }
-		//Specifies whether a status window displays simple text or displays all window parts set by a previous SB_SETPARTS message.
-		template<typename WP, typename LP> void sb_simple(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SIMPLE, (WPARAM)w, (LPARAM)p); }
-
-
-		// Notifications
-		//Notifies the parent window of a status bar control that the user has clicked the left mouse button within the control. NM_CLICK (status bar) is sent in the form of a WM_NOTIFY message.
-		void on_nm_click(Window::T&t, const Callback& f) { Window::connect_notify<NM_CLICK>(t, f); }
-		//Notifies the parent window of a status bar control that the user has double-clicked the left mouse button within the control. This notification is sent in the form of a WM_NOTIFY message.
-		void on_nm_dblclk(Window::T&t, const Callback& f) { Window::connect_notify<NM_DBLCLK>(t, f); }
-		//Notifies the parent window of a status bar control that the user has clicked the right mouse button within the control. This notification is sent in the form of a WM_NOTIFY message.
-		void on_nm_rclick(Window::T&t, const Callback& f) { Window::connect_notify<NM_RCLICK>(t, f); }
-		//Notifies the parent windows of a status bar control that the user has double-clicked the right mouse button within the control. NM_RDBLCLK (status bar) is sent in the form of a WM_NOTIFY message.
-		void on_nm_rdblclk(Window::T&t, const Callback& f) { Window::connect_notify<NM_RDBLCLK>(t, f); }
-		//Sent by a status bar control when the simple mode changes due to a SB_SIMPLE message. This notification is sent in the form of a WM_NOTIFY message.
-		void on_sbn_simplemodechange(Window::T&t, const Callback& f) { Window::connect<SBN_SIMPLEMODECHANGE>(t, f); }
-
-
-		void create(T& statusbar) {
-			TRACE(statusbar.style == 0,"Style is set to 0. Are you sure?");
-			RECT rc;
-			GetClientRect(statusbar.parent, &rc);
-			statusbar.hwnd = CreateWindowEx(0, STATUSCLASSNAME, 0,
-											statusbar.style,
-											rc.left, rc.top, rc.right, rc.bottom,
-											statusbar.parent, (HMENU)0, GetModuleHandle(NULL), 0);
-			TRACE(statusbar.hwnd == nullptr, "Could not create status bar %d", GetLastError());
-			// This section takes with width of the client area and divides it by the number
-			// of parts of the status bar
-			const auto& parts = statusbar.m_parts;
-			const HLOCAL hloc = LocalAlloc(LHND, sizeof(int) * parts.size());
-			const PINT   paParts = (PINT)LocalLock(hloc);
-
-			if (std::all_of(parts.begin(), parts.end(),
-				[](const auto& p) { return p.first == 0; })) {
-				const int sb_size = (rc.right - rc.left) / static_cast<int>(parts.size());
-				std::accumulate(std::begin(parts), std::end(parts), 0, [&paParts, &sb_size](auto acc, auto val) {
-					paParts[acc] = sb_size*(acc + 1);
-					return acc + 1;
-				});
-			} else {
-				std::accumulate(std::begin(parts), std::end(parts),
-								0,
-								[&paParts](auto acc, auto val) { paParts[acc] = val.first; return acc + 1; });
-			}
-
-			// Create the status bar with right number of parts, sizes and initial text
-			sb_setparts(statusbar, parts.size(), paParts);
-			std::accumulate(std::begin(parts), std::end(parts), 0, [&statusbar](const auto acc, const auto val) {
-				sb_settext(statusbar, acc, val.second);
-				TRACE(GetLastError(), "Error code", GetLastError());
-				return acc + 1;
-			});
-			// Free the array, and return.
-			LocalUnlock(hloc);
-			LocalFree(hloc);
-		}
-
-		void show(const T&t) {
-			ShowWindow(t.hwnd, SW_SHOW);
-		}
-	};
-
 	class ImageList
 	{
 	public:
 
-		ImageList() : m_crMask(CLR_DEFAULT) {};
+		ImageList() : m_crMask(CLR_DEFAULT), m_crFlags(0) {};
 		~ImageList() {
 			ImageList_Destroy(m_imageList);
 		}
@@ -736,11 +609,446 @@ private: \
 		DWORD m_style = 0;
 	};
 
+	class MenuStyle
+	{
+	public:
+		//Uses a bitmap as the menu item. The lpNewItem parameter contains a handle to the bitmap.
+		MenuStyle& mf_bitmap() { m_style ^= MF_BITMAP; return *this; }
+
+		//Places a check mark next to the menu item. If the application provides check-mark bitmaps (see SetMenuStyleItemBitmaps, this flag displays the check-mark bitmap next to the menu item.
+		MenuStyle& mf_checked() { m_style ^= MF_CHECKED; return *this; }
+
+		//Disables the menu item so that it cannot be selected, but the flag does not gray it.
+		MenuStyle& mf_disabled() { m_style ^= MF_DISABLED; return *this; }
+
+		//Enables the menu item so that it can be selected, and restores it from its grayed state.
+		MenuStyle& mf_enabled() { m_style ^= MF_ENABLED; return *this; }
+
+		//Disables the menu item and grays it so that it cannot be selected.
+		MenuStyle& mf_grayed() { m_style ^= MF_GRAYED; return *this; }
+
+		//Functions the same as the MF_MENUBREAK flag for a menu bar. For a drop-down menu, submenu, or shortcut menu, the new column is separated from the old column by a vertical line.
+		MenuStyle& mf_menubarbreak() { m_style ^= MF_MENUBARBREAK; return *this; }
+
+		//Places the item on a new line (for a menu bar) or in a new column (for a drop-down menu, submenu, or shortcut menu) without separating columns.
+		MenuStyle& mf_menubreak() { m_style ^= MF_MENUBREAK; return *this; }
+
+		//Specifies that the item is an owner-drawn item. Before the menu is displayed for the first time, the window that owns the menu receives a WM_MEASUREITEM message to retrieve the width and height of the menu item. The WM_DRAWITEM message is then sent to the window procedure of the owner window whenever the appearance of the menu item must be updated.
+		MenuStyle& mf_ownerdraw() { m_style ^= MF_OWNERDRAW; return *this; }
+
+		//Specifies that the menu item opens a drop-down menu or submenu. The uIDNewItem parameter specifies a handle to the drop-down menu or submenu. This flag is used to add a menu name to a menu bar, or a menu item that opens a submenu to a drop-down menu, submenu, or shortcut menu.
+		MenuStyle& mf_popup() { m_style ^= MF_POPUP; return *this; }
+
+		//Draws a horizontal dividing line. This flag is used only in a drop-down menu, submenu, or shortcut menu. The line cannot be grayed, disabled, or highlighted. The lpNewItem and uIDNewItem parameters are ignored.
+		MenuStyle& mf_separator() { m_style ^= MF_SEPARATOR; return *this; }
+
+		//Specifies that the menu item is a text string; the lpNewItem parameter is a pointer to the string.
+		MenuStyle& mf_string() { m_style ^= MF_STRING; return *this; }
+
+		//Does not place a check mark next to the item (default). If the application supplies check-mark bitmaps (see SetMenuStyleItemBitmaps), this flag displays the clear bitmap next to the menu item.
+		MenuStyle& mf_unchecked() { m_style ^= MF_UNCHECKED; return *this; }
+
+		DWORD style() const { return m_style; }
+
+	private:
+		DWORD m_style = 0;
+	};
+
+
+	class MenuMask
+	{
+	public:
+		//Retrieves or sets the hbmpItem member.
+		MenuMask& miim_bitmap() { m_mask ^= MIIM_BITMAP; return *this; }
+
+		//Retrieves or sets the hbmpChecked and hbmpUnchecked members.
+		MenuMask& miim_checkmarks() { m_mask ^= MIIM_CHECKMARKS; return *this; }
+
+		//Retrieves or sets the dwItemData member.
+		MenuMask& miim_data() { m_mask ^= MIIM_DATA; return *this; }
+
+		//Retrieves or sets the fType member.
+		MenuMask& miim_ftype() { m_mask ^= MIIM_FTYPE; return *this; }
+
+		//Retrieves or sets the wID member.
+		MenuMask& miim_id() { m_mask ^= MIIM_ID; return *this; }
+
+		//Retrieves or sets the fState member.
+		MenuMask& miim_state() { m_mask ^= MIIM_STATE; return *this; }
+
+		//Retrieves or sets the dwTypeData member.
+		MenuMask& miim_string() { m_mask ^= MIIM_STRING; return *this; }
+
+		//Retrieves or sets the hSubMenu member.
+		MenuMask& miim_submenu() { m_mask ^= MIIM_SUBMENU; return *this; }
+
+		DWORD mask() const { return m_mask; }
+	private:
+		DWORD m_mask = 0;
+	};
+
+	class MenuType
+	{
+	public:
+		//Displays the menu item using a bitmap. The low-order word of the dwTypeData member is the bitmap handle, and the cch member is ignored.
+		MenuType& mft_bitmap() { m_type ^= MFT_BITMAP; return *this; }
+
+		//Places the menu item on a new line (for a menu bar) or in a new column (for a drop-down menu, submenu, or shortcut menu). For a drop-down menu, submenu, or shortcut menu, a vertical line separates the new column from the old.
+		MenuType& mft_menubarbreak() { m_type ^= MFT_MENUBARBREAK; return *this; }
+
+		//Places the menu item on a new line (for a menu bar) or in a new column (for a drop-down menu, submenu, or shortcut menu). For a drop-down menu, submenu, or shortcut menu, the columns are not separated by a vertical line.
+		MenuType& mft_menubreak() { m_type ^= MFT_MENUBREAK; return *this; }
+
+		//Assigns responsibility for drawing the menu item to the window that owns the menu. The window receives a WM_MEASUREITEM message before the menu is displayed for the first time, and a WM_DRAWITEM message whenever the appearance of the menu item must be updated. If this value is specified, the dwTypeData member contains an application-defined value.
+		MenuType& mft_ownerdraw() { m_type ^= MFT_OWNERDRAW; return *this; }
+
+		//Displays selected menu items using a radio-button mark instead of a check mark if the hbmpChecked member is NULL.
+		MenuType& mft_radiocheck() { m_type ^= MFT_RADIOCHECK; return *this; }
+
+		//Right-justifies the menu item and any subsequent items. This value is valid only if the menu item is in a menu bar.
+		MenuType& mft_rightjustify() { m_type ^= MFT_RIGHTJUSTIFY; return *this; }
+
+		//Specifies that menus cascade right-to-left (the default is left-to-right). This is used to support right-to-left languages, such as Arabic and Hebrew.
+		MenuType& mft_rightorder() { m_type ^= MFT_RIGHTORDER; return *this; }
+
+		//Specifies that the menu item is a separator. A menu item separator appears as a horizontal dividing line. The dwTypeData and cch members are ignored. This value is valid only in a drop-down menu, submenu, or shortcut menu.
+		MenuType& mft_separator() { m_type ^= MFT_SEPARATOR; return *this; }
+
+		//Displays the menu item using a text string. The dwTypeData member is the pointer to a null-terminated string, and the cch member is the length of the string.
+		MenuType& mft_string() { m_type ^= MFT_STRING; return *this; }
+	private:
+		DWORD m_type = 0;
+	};
+
+	class MenuState
+	{
+	public:
+		//Checks the menu item. For more information about selected menu items, see the hbmpChecked member.
+		MenuState& mfs_checked() { m_state ^= MFS_CHECKED; return *this; }
+
+		//Specifies that the menu item is the default. A menu can contain only one default menu item, which is displayed in bold.
+		MenuState& mfs_default() { m_state ^= MFS_DEFAULT; return *this; }
+
+		//Disables the menu item and grays it so that it cannot be selected. This is equivalent to MFS_GRAYED.
+		MenuState& mfs_disabled() { m_state ^= MFS_DISABLED; return *this; }
+
+		//Enables the menu item so that it can be selected. This is the default state.
+		MenuState& mfs_enabled() { m_state ^= MFS_ENABLED; return *this; }
+
+		//Disables the menu item and grays it so that it cannot be selected. This is equivalent to MFS_DISABLED.
+		MenuState& mfs_grayed() { m_state ^= MFS_GRAYED; return *this; }
+
+		//Highlights the menu item.
+		MenuState& mfs_hilite() { m_state ^= MFS_HILITE; return *this; }
+
+		//Unchecks the menu item. For more information about clear menu items, see the hbmpChecked member.
+		MenuState& mfs_unchecked() { m_state ^= MFS_UNCHECKED; return *this; }
+
+		//Removes the highlight from the menu item. This is the default state.
+		MenuState& mfs_unhilite() { m_state ^= MFS_UNHILITE; return *this; }
+
+		DWORD state() const { return m_state; }
+
+	private:
+		DWORD m_state;
+	};
+
+	namespace Menu {
+		struct T
+		{
+			T() {}
+			explicit T(HWND hwnd) : parent(hwnd) {}
+			void create() { SetMenu(parent, menu); }
+
+			HMENU menu;
+			HWND parent; // Only used for menubar
+		};
+
+		T init(HWND parent) {
+			T t(parent);
+			t.menu = CreateMenu();
+			TRACE(t.menu == nullptr, "Could not create menu %d", GetLastError());
+			return t;
+		}
+
+		T init_submenu() {
+			T t;
+			t.menu = CreatePopupMenu();
+			TRACE(t.menu == nullptr, "Could not create sub menu %d", GetLastError());
+			return t;
+		}
+
+		void load_menu(T&t, const int id) {
+			t.menu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(id));
+			TRACE(t.menu == nullptr, "Could not load menu");
+		}
+
+		const int count(const T&t) {
+			return GetMenuItemCount(t.menu);
+		}
+
+		HMENU menu_by_position(const T&t, const int pos) {
+			MENUITEMINFO mii = {};
+			mii.cbSize = sizeof(mii);
+			mii.fMask = MenuMask().miim_submenu().mask();
+			auto ret = GetMenuItemInfo(t.menu, pos, MF_BYPOSITION, &mii);
+			TRACE(ret == FALSE, "Could not retrieve menu by postiion  %d", GetLastError());
+			return mii.hSubMenu;
+		}
+
+		HMENU menu_by_cmd(const T&t, const int cmd) {
+			MENUITEMINFO mii = {};
+			mii.cbSize = sizeof(mii);
+			mii.fMask = MenuMask().miim_submenu().mask();
+			auto ret = GetMenuItemInfo(t.menu, cmd, MF_BYCOMMAND, &mii);
+			TRACE(ret == FALSE, "Could not retrieve menu by cmd %d\n", GetLastError());
+			return mii.hSubMenu;
+		}
+
+		void string(T&t, const LPWSTR name, const int cmd) {
+			auto ret = AppendMenu(t.menu, MF_STRING, cmd, name);
+			TRACE(ret == FALSE, "Could not set menu string %d\n", GetLastError());
+		}
+
+		void separator(T&t, const int pos) {
+			AppendMenu(t.menu, MF_SEPARATOR, MF_BYPOSITION, NULL);
+		}
+
+		void checked(T&t, const LPCWSTR name, const int cmd, const ImageList& il) {
+			auto ret = AppendMenu(t.menu, MF_CHECKED, cmd, name);
+			if (il.count()) {
+				MENUITEMINFO mii = {};
+				mii.cbSize = sizeof(mii);
+				mii.fMask = MenuMask().miim_checkmarks().mask();
+				mii.hbmpChecked = il.get_image_info(0).hbmImage;
+				mii.hbmpUnchecked = il.get_image_info(1).hbmImage;
+				ret = SetMenuItemInfo(t.menu, cmd, MF_BYCOMMAND, &mii);
+				TRACE(ret == FALSE, "Could not set menu checkmark %d\n", GetLastError());
+			}
+			TRACE(ret == FALSE, "Could not set menu string %d\n", GetLastError());
+		}
+
+		void uncheck(T&t, const int cmd) {
+			CheckMenuItem(t.menu, cmd, MF_BYCOMMAND | MF_UNCHECKED);
+		}
+		void check(T&t, const int cmd) {
+			CheckMenuItem(t.menu, cmd, MF_BYCOMMAND | MF_CHECKED);
+		}
+
+		// Colour images for menu items - looks cool
+		void set_image(const HWND hwnd, T&t, const int cmd, ImageList& imageList, const int idx = 0) {
+			// Get Device Context for Window client area 
+			HDC hDCWindow = ::GetDC(hwnd);
+			// and create a compatibles DC im memory
+			HDC hDCDest = CreateCompatibleDC(hDCWindow);
+			// Create a bitmap compatible DC's device i.e. the window DC to be used as copy destination
+			HBITMAP hComapatBitmap = CreateCompatibleBitmap(hDCWindow, 16, 16);
+			// Select the destination bitmap into the DC
+			HGDIOBJ hOldDestBmp = SelectObject(hDCDest, hComapatBitmap);
+			TRACE(INVALID_HANDLE_VALUE == hOldDestBmp, "Could not select destination bitmap from dc %d", GetLastError());
+
+			// Get the menu background color
+			HBRUSH hBrush = GetSysColorBrush(COLOR_MENU);
+			LOGBRUSH LogBrush = {};
+			int nBytes = sizeof(LOGBRUSH);
+			nBytes = GetObject(hBrush, nBytes, &LogBrush);
+
+			// Prepare a structure that for describing the bitmap copying operation
+			IMAGELISTDRAWPARAMS ilDrawParams = {};
+			ilDrawParams.cbSize = sizeof(IMAGELISTDRAWPARAMS);
+			ilDrawParams.himl = imageList.handle();             // the ImageList containing the bitmap
+			ilDrawParams.i = idx;
+			ilDrawParams.hdcDst = hDCDest;
+			ilDrawParams.cx = imageList.cx();// Bitmap x
+			ilDrawParams.cy = imageList.cy();// Bitmap y
+			ilDrawParams.rgbBk = LogBrush.lbColor;
+			ilDrawParams.rgbFg = CLR_NONE;
+			ilDrawParams.fStyle = ILD_NORMAL;
+			ilDrawParams.dwRop = SRCCOPY;
+			ilDrawParams.fState = ILS_NORMAL;
+			BOOL bDrawn = ImageList_DrawIndirect(&ilDrawParams);
+			TRACE(bDrawn == FALSE, "Could not draw image into menu bar %d", GetLastError());
+
+
+			// Select back old object back into the target DC which displaces the bitmap just drawn
+			HBITMAP hRetrievedBitmap = (HBITMAP)::SelectObject(hDCDest, hOldDestBmp);
+			MENUITEMINFO MenuItemInfo = {};
+			MenuItemInfo.cbSize = sizeof(MENUITEMINFO);
+			// Give the change structure the bitmap and set a bit saying 'new bitmap'.
+			MenuItemInfo.fMask = MIIM_BITMAP;
+			MenuItemInfo.hbmpItem = hRetrievedBitmap;
+			// Make the change
+			auto ret = SetMenuItemInfo(t.menu, cmd, MF_BYCOMMAND, &MenuItemInfo);
+			TRACE(ret == FALSE, "Could not set menu item colour bitmap %d\n", GetLastError());
+
+			// as used CreateCompatibleDC(...) must delete it
+			::DeleteDC(hDCDest);
+
+			// as used GetDc must release it
+			::ReleaseDC(hwnd, hDCWindow);
+
+			// Call as required by Windows. See http://msdn.microsoft.com/en-us/library/windows/desktop/ms648001(v=vs.85).aspx
+			::DrawMenuBar(hwnd);
+		}
+
+		void show_popup() {
+
+		}
+
+
+		void set_sub_menu(T&t, const T& submenu, const int pos, LPWSTR name) {
+			auto ret = AppendMenu(t.menu, MF_STRING | MF_POPUP, 0, name);
+			TRACE(ret == FALSE, "Could not set menu string %d\n", GetLastError());
+			MENUITEMINFO mii = {};
+			mii.cbSize = sizeof(mii);
+			mii.fMask = MenuMask().miim_submenu().miim_string().mask();
+			mii.dwTypeData = name;
+			mii.hSubMenu = submenu.menu;
+			size_t len;
+			StringCchLength(name, STRSAFE_MAX_CCH, &len);
+			mii.cch = len;
+			ret = SetMenuItemInfo(t.menu, pos, MF_BYPOSITION, &mii);
+			TRACE(ret == FALSE, "Could not set menu submenu %d\n", GetLastError());
+
+
+		}
+	};
+
+
+	namespace StatusBar {
+		struct T
+		{
+			explicit  T(HWND hwnd) : parent(hwnd) {}
+			const HWND parent;
+			HWND hwnd = nullptr;
+			DWORD style = 0;
+			std::vector<std::pair<int, LPCWSTR>> m_parts;
+		};
+
+		inline auto init(const HWND hwnd) -> T {
+			return T(hwnd);
+		}
+
+		inline void add_part(T& statusbar, const int size, LPCWSTR text) {
+			statusbar.m_parts.emplace_back(size, text);
+		}
+
+		// Styles for status bar
+		//The window styles
+		void window_style(T&t, Window::Style& ws) { t.style ^= ws.style(); }
+		// The status bar control will include a sizing grip at the right end of the status bar. A sizing grip is similar to a sizing border; it is a rectangular area that the user can click and drag to resize the parent window. 
+		void sbars_sizegrip(T&t) { t.style ^= SBARS_SIZEGRIP; }
+		// Enable status bar tooltips
+		void sbars_tooltips(T&t) { t.style ^= SBARS_TOOLTIPS; }
+
+		// Messages
+		//Retrieves the current widths of the horizontal and vertical borders of a status window.
+		template<typename WP, typename LP> LRESULT sb_getborders(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETBORDERS, (WPARAM)w, (LPARAM)p); }
+		//Retrieves the icon for a part in a status bar.
+		template<typename WP, typename LP> LRESULT sb_geticon(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETICON, (WPARAM)w, (LPARAM)p); }
+		//Retrieves a count of the parts in a status window. The message also retrieves the coordinate of the right edge of the specified number of parts.
+		template<typename WP, typename LP> LRESULT sb_getparts(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETPARTS, (WPARAM)w, (LPARAM)p); }
+		//Retrieves the bounding rectangle of a part in a status window.
+		template<typename WP, typename LP> LRESULT sb_getrect(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETRECT, (WPARAM)w, (LPARAM)p); }
+		//The SB_GETTEXT message retrieves the text from the specified part of a status window.
+		template<typename WP, typename LP> LRESULT sb_gettext(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETTEXT, (WPARAM)w, (LPARAM)p); }
+		//The SB_GETTEXTLENGTH message retrieves the length, in characters, of the text from the specified part of a status window.
+		template<typename WP, typename LP> LRESULT sb_gettextlength(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETTEXTLENGTH, (WPARAM)w, (LPARAM)p); }
+		//Retrieves the tooltip text for a part in a status bar. The status bar must be created with the SBT_TOOLTIPS style to enable tooltips.
+		template<typename WP, typename LP> LRESULT sb_gettiptext(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETTIPTEXT, (WPARAM)w, (LPARAM)p); }
+		//Retrieves the Unicode character format flag for the control.
+		template<typename WP, typename LP> LRESULT sb_getunicodeformat(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_GETUNICODEFORMAT, (WPARAM)w, (LPARAM)p); }
+		//Checks a status bar control to determine if it is in simple mode.
+		template<typename WP, typename LP> LRESULT sb_issimple(const T&t, WP w, LP p) { return SendMessage(t.hwnd, SB_ISSIMPLE, (WPARAM)w, (LPARAM)p); }
+		//Sets the background color in a status bar.
+		template<typename WP, typename LP> void sb_setbkcolor(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETBKCOLOR, (WPARAM)w, (LPARAM)p); }
+		//Sets the icon for a part in a status bar.
+		template<typename WP, typename LP> void sb_seticon(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETICON, (WPARAM)w, (LPARAM)p); }
+		//Sets the minimum height of a status window's drawing area.
+		template<typename WP, typename LP> void sb_setminheight(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETMINHEIGHT, (WPARAM)w, (LPARAM)p); }
+		//Sets the number of parts in a status window and the coordinate of the right edge of each part.
+		template<typename WP, typename LP> void sb_setparts(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETPARTS, (WPARAM)w, (LPARAM)p); }
+		//The SB_SETTEXT message sets the text in the specified part of a status window.
+		template<typename WP, typename LP> void sb_settext(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETTEXT, (WPARAM)w, (LPARAM)p); }
+		//Sets the tooltip text for a part in a status bar. The status bar must have been created with the SBT_TOOLTIPS style to enable tooltips.
+		template<typename WP, typename LP> void sb_settiptext(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETTIPTEXT, (WPARAM)w, (LPARAM)p); }
+		//Sets the Unicode character format flag for the control. This message allows you to change the character set used by the control at run time rather than having to re-create the control.
+		template<typename WP, typename LP> void sb_setunicodeformat(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SETUNICODEFORMAT, (WPARAM)w, (LPARAM)p); }
+		//Specifies whether a status window displays simple text or displays all window parts set by a previous SB_SETPARTS message.
+		template<typename WP, typename LP> void sb_simple(const T&t, WP w, LP p) { SendMessage(t.hwnd, SB_SIMPLE, (WPARAM)w, (LPARAM)p); }
+
+
+		// Notifications
+		//Notifies the parent window of a status bar control that the user has clicked the left mouse button within the control. NM_CLICK (status bar) is sent in the form of a WM_NOTIFY message.
+		void on_nm_click(Window::T&t, const Callback& f) { Window::connect_notify<NM_CLICK>(t, f); }
+		//Notifies the parent window of a status bar control that the user has double-clicked the left mouse button within the control. This notification is sent in the form of a WM_NOTIFY message.
+		void on_nm_dblclk(Window::T&t, const Callback& f) { Window::connect_notify<NM_DBLCLK>(t, f); }
+		//Notifies the parent window of a status bar control that the user has clicked the right mouse button within the control. This notification is sent in the form of a WM_NOTIFY message.
+		void on_nm_rclick(Window::T&t, const Callback& f) { Window::connect_notify<NM_RCLICK>(t, f); }
+		//Notifies the parent windows of a status bar control that the user has double-clicked the right mouse button within the control. NM_RDBLCLK (status bar) is sent in the form of a WM_NOTIFY message.
+		void on_nm_rdblclk(Window::T&t, const Callback& f) { Window::connect_notify<NM_RDBLCLK>(t, f); }
+		//Sent by a status bar control when the simple mode changes due to a SB_SIMPLE message. This notification is sent in the form of a WM_NOTIFY message.
+		void on_sbn_simplemodechange(Window::T&t, const Callback& f) { Window::connect<SBN_SIMPLEMODECHANGE>(t, f); }
+
+
+		void create(T& statusbar) {
+			TRACE(statusbar.style == 0, "Style is set to 0. Are you sure?");
+			RECT rc;
+			GetClientRect(statusbar.parent, &rc);
+			statusbar.hwnd = CreateWindowEx(0, STATUSCLASSNAME, 0,
+											statusbar.style,
+											rc.left, rc.top, rc.right, rc.bottom,
+											statusbar.parent, (HMENU)0, GetModuleHandle(NULL), 0);
+			TRACE(statusbar.hwnd == nullptr, "Could not create status bar %d", GetLastError());
+			// This section takes with width of the client area and divides it by the number
+			// of parts of the status bar
+			const auto& parts = statusbar.m_parts;
+			const HLOCAL hloc = LocalAlloc(LHND, sizeof(int) * parts.size());
+			const PINT   paParts = (PINT)LocalLock(hloc);
+
+			if (std::all_of(parts.begin(), parts.end(),
+				[](const auto& p) { return p.first == 0; })) {
+				const int sb_size = (rc.right - rc.left) / static_cast<int>(parts.size());
+				std::accumulate(std::begin(parts), std::end(parts), 0, [&paParts, &sb_size](auto acc, auto val) {
+					paParts[acc] = sb_size*(acc + 1);
+					return acc + 1;
+				});
+			} else {
+				std::accumulate(std::begin(parts), std::end(parts),
+								0,
+								[&paParts](auto acc, auto val) { paParts[acc] = val.first; return acc + 1; });
+			}
+
+			// Create the status bar with right number of parts, sizes and initial text
+			sb_setparts(statusbar, parts.size(), paParts);
+			std::accumulate(std::begin(parts), std::end(parts), 0, [&statusbar](const auto acc, const auto val) {
+				sb_settext(statusbar, acc, val.second);
+				TRACE(GetLastError(), "Error code %d", GetLastError());
+				return acc + 1;
+			});
+			// Free the array, and return.
+			LocalUnlock(hloc);
+			LocalFree(hloc);
+		}
+
+		void show(const T&t) {
+			ShowWindow(t.hwnd, SW_SHOW);
+		}
+	};
+
+
+
 	class ToolbarButton
 	{
 	public:
-		TBBUTTON create() {
-			return TBBUTTON{ m_id, m_cmd,(BYTE)m_state,(BYTE)m_style,0,0, (BYTE)m_text };
+		ToolbarButton& create() {
+			m_button.iBitmap = m_id;
+			m_button.idCommand = m_cmd;
+			m_button.fsState = m_state;
+			m_button.fsStyle = m_style;
+			m_button.dwData = 0;
+			m_button.iString = (INT_PTR)m_text;
+			return *this;
 		}
 		//The button has the TBSTYLE_CHECK style and is being clicked.
 		ToolbarButton&tbstate_checked() { m_state ^= TBSTATE_CHECKED; return *this; }
@@ -796,12 +1104,16 @@ private: \
 		//Specifies that the button will have a drop-down arrow, but not as a separate section. Buttons with this style behave the same, regardless of whether the TBSTYLE_EX_DRAWDDARROWS extended style is set.
 		ToolbarButton&btns_wholedropdown() { m_style ^= BTNS_WHOLEDROPDOWN; return *this; }
 
+		TBBUTTON handle() const { return m_button; }
+
 		MODIFIER(style, DWORD, ToolbarButton);
 		MODIFIER(state, DWORD, ToolbarButton);
 		MODIFIER(id, int, ToolbarButton);
 		MODIFIER(cmd, int, ToolbarButton);
 		MODIFIER(text, LPCWSTR, ToolbarButton);
+
 	private:
+		TBBUTTON m_button;
 	};
 
 	namespace Toolbar {
@@ -844,7 +1156,6 @@ private: \
 			//This style allows you to set text for all buttons, but only display it for those buttons with the BTNS_SHOWTEXT button style. The TBSTYLE_LIST style must also be set. Normally, when a button does not display text, your application must handle TBN_GETINFOTIP or TTN_GETDISPINFO to display a tooltip. With the TBSTYLE_EX_MIXEDBUTTONS extended style, text that is set but not displayed on a button will automatically be used as the button's tooltip text. Your application only needs to handle TBN_GETINFOTIP or or TTN_GETDISPINFO if it needs more flexibility in specifying the tooltip text.
 			Style& tbstyle_ex_mixedbuttons() { m_style ^= TBSTYLE_EX_MIXEDBUTTONS; return *this; }
 
-
 			MODIFIER(style, int, Style);
 		private:
 		};
@@ -855,7 +1166,7 @@ private: \
 			HWND hwnd = nullptr;
 
 
-			Style style;
+			int style;
 			int number_buttons = 0;
 			int text_resource_id = 0;
 			HIMAGELIST imageList = nullptr;
@@ -1123,7 +1434,7 @@ private: \
 		// tbn_wraphotitem
 		void on_tbn_wraphotitem(Window::T&t, const Callback& f) { Window::connect_notify<TBN_WRAPHOTITEM>(t, f); }
 
-		void ws_style(T&t, Window::Style& ws) { t.style.style() ^= ws.style(); }
+		void ws_style(T&t, Window::Style& ws) { t.style ^= ws.style(); }
 
 		inline auto init(const HWND hwnd) -> T {
 			return T(hwnd);
@@ -1135,42 +1446,47 @@ private: \
 
 		void create(T& toolbar, const ImageList& il) {
 			TRACE(il.count() == 0, "Image list has no bitmaps");
-			TRACE(toolbar.style.style() == 0, "Toolbar style has not been set");
+			TRACE(toolbar.style == 0, "Toolbar style has not been set");
 			TRACE(toolbar.parent == 0, "Toolbar parent window not set");
 			toolbar.hwnd = CreateWindowEx(0, TOOLBARCLASSNAME, NULL,
-										  toolbar.style.style(), 0, 0, 0, 0,
+										  toolbar.style, 0, 0, 0, 0,
 										  toolbar.parent, NULL, GetModuleHandle(NULL), NULL);
 			TRACE(toolbar.hwnd == nullptr, "Could not create toolbar window %d", GetLastError());
-			const auto offset = tb_setimagelist(toolbar, 0, il.handle());
-			tb_loadimages(toolbar, IDB_STD_SMALL_COLOR, HINST_COMMCTRL);
-			TRACE(GetLastError(), "Error code", GetLastError());
 			tb_buttonstructsize(toolbar, sizeof(TBBUTTON), 0);
-			TRACE(GetLastError(), "Error code", GetLastError());
+			const auto offset = tb_setimagelist(toolbar, 0, il.handle());
+			auto ret = tb_loadimages(toolbar, IDB_STD_SMALL_COLOR, HINST_COMMCTRL);
+			TRACE(ret == 0, "Loaded %d images\n", ret);
 
 			// If you want text below the buttons send this message
 			// If not, it all becomes tooltips
-			if (toolbar.style.style() & Style().tbstyle_tooltips().style())
-				tb_setmaxtextrows(toolbar, 0, 2);
+			if (toolbar.style & Style().tbstyle_tooltips().style()) {
+				tb_setmaxtextrows(toolbar, 0, 0);
+				// Text for buttons
+				for (auto& tb : toolbar.buttons) {
+					tb.iString = tb_addstring(toolbar, 0, tb.iString);
+					TRACE(tb.iString == -1, "Could not set tooltip string for %d \n", GetLastError());
+				}
+			} else {
+				ret = tb_addstring(toolbar, GetModuleHandle(NULL), toolbar.text_resource_id);
+				TRACE(ret == -1, "Error code %d\n", GetLastError());
+				tb_setmaxtextrows(toolbar, 2, 0);
+			}
 			tb_setextendedstyle(toolbar, 0, Style().tbstyle_ex_drawddarrows().style());
-			TRACE(GetLastError(), "Error code", GetLastError());
 
-			// Text for buttons
-			tb_addstring(toolbar, GetModuleHandle(NULL), toolbar.text_resource_id);
-			TRACE(GetLastError(), "Error code", GetLastError());
 
 			// Set up the buttons
-			tb_addbuttons(toolbar, toolbar.buttons.size(), toolbar.buttons.data());
-			TRACE(GetLastError(), "Error code", GetLastError());
+			ret = tb_addbuttons(toolbar, toolbar.buttons.size(), toolbar.buttons.data());
+			TRACE(ret == FALSE, "Error code %d\n", GetLastError());
 
 			// Resize the toolbar, and then show it.
 			tb_autosize(toolbar, 0, 0);
-			TRACE(GetLastError(), "Error code", GetLastError());
 
 			show(toolbar);
 		}
 
-		void add_button(T&t, TBBUTTON& button) {
-			t.buttons.emplace_back(button);
+		// Move button into button list
+		void add_button(T&t, const ToolbarButton& button) {
+			t.buttons.emplace_back(button.handle());
 		}
 
 		void set_text(T&t, const int id) {

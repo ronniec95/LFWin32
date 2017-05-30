@@ -70,6 +70,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	ImageList imageList;
 	imageList.id(IDB_BITMAP1)
 		.cx(16)
+		.cy(16)		
 		.cGrow(5)
 		.ilc_mask()
 		.ilc_color16()
@@ -77,12 +78,56 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		.lr_defaultsize()
 		.lr_shared()
 		.lr_loadtransparent()
-		.load();
+		.create();
 	auto toolbar = Toolbar::init(window.hwnd);
-	toolbar.style.tbstyle_flat().tbstyle_wrapable().style(Window::Style().ws_child().style());
-	Toolbar::add_button(toolbar, ToolbarButton().id(0).cmd(ID_FILE_NEW).btns_autosize().tbstate_enabled().create());
-	Toolbar::add_button(toolbar, ToolbarButton().id(1).cmd(ID_FILE_EXIT).btns_autosize().tbstate_enabled().create());
+
+	
+	// Regular horizontal toolbar, text below
+	//toolbar.style.tbstyle_flat().tbstyle_wrapable().style(Window::Style().ws_child().style());
+	// Vertical tool bar
+	// toolbar.style.tbstyle_flat().tbstyle_wrapable().style(Window::Style().ws_child().style() ^ CommonCtrl::Style().ccs_vert().style());
+
+	// Toolbar button with tooltips
+    // toolbar.style = Toolbar::Style().tbstyle_flat().tbstyle_wrapable().tbstyle_tooltips().style() ^ Window::Style().ws_child().ws_visible().ws_clipsiblings().ws_clipchildren().style();
+
+	// Tool bar with text below
+	toolbar.style = Toolbar::Style().tbstyle_wrapable().style() ^ Window::Style().ws_child().style();
+
+	Toolbar::add_button(toolbar, ToolbarButton().id(STD_FILENEW).cmd(ID_FILE_NEW).btns_autosize().tbstate_enabled().create());
+	Toolbar::add_button(toolbar, ToolbarButton().id(STD_FILESAVE).cmd(ID_FILE_EXIT).btns_autosize().tbstate_enabled().create());
+	Toolbar::set_text(toolbar, IDS_TOOLBAR);
 	Toolbar::create(toolbar, imageList);
+
+	// Menu
+	ImageList menuCheckBox;
+	menuCheckBox.id(IDB_BITMAP2)
+		.cx(16)
+		.cy(16)
+		.cGrow(2)
+		.ilc_mask()
+		.ilc_color8()
+		.lr_createdibsection()
+		.lr_defaultsize()
+		.lr_shared()
+		.lr_loadtransparent()
+		.load();
+	auto menubar = Menu::init(window.hwnd);
+	auto filemenu = Menu::init_submenu();
+	Menu::string(filemenu, L"&New", ID_FILE_NEW);
+	Menu::string(filemenu, L"E&xit", ID_FILE_EXIT);
+	Menu::set_sub_menu(menubar, filemenu, 0, L"&File");
+
+	auto editmenu = Menu::init_submenu();
+	Menu::string(editmenu, L"Cut\tCtrl-X", ID_EDIT_CUT);
+	Menu::checked(editmenu, L"Copy\tCtrl-C", ID_EDIT_COPY, ImageList());
+	Menu::string(editmenu, L"Paste\tCtrl-V", ID_EDIT_PASTE);
+	Menu::set_sub_menu(menubar, editmenu, 1, L"&Edit");
+
+	auto toolsmenu = Menu::init_submenu();
+	Menu::string(toolsmenu, L"P&references...", ID_TOOLS_PREFERENCES);
+	Menu::set_image(window.hwnd, toolsmenu, ID_TOOLS_PREFERENCES, menuCheckBox);
+	Menu::set_sub_menu(menubar, toolsmenu, 2, L"&Tools");
+	menubar.create();
 	app.run();
 
 	auto timer = Timer::init(hwnd);
