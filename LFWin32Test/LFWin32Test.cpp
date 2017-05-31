@@ -91,12 +91,21 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     // toolbar.style = Toolbar::Style().tbstyle_flat().tbstyle_wrapable().tbstyle_tooltips().style() ^ Window::Style().ws_child().ws_visible().ws_clipsiblings().ws_clipchildren().style();
 
 	// Tool bar with text below
-	toolbar.style = Toolbar::Style().tbstyle_wrapable().style() ^ Window::Style().ws_child().style();
+	toolbar.style = Toolbar::Style().tbstyle_wrapable().tbstyle_ex_drawddarrows().style() ^ Window::Style().ws_child().style();
 
 	Toolbar::add_button(toolbar, ToolbarButton().id(STD_FILENEW).cmd(ID_FILE_NEW).btns_autosize().tbstate_enabled().create());
-	Toolbar::add_button(toolbar, ToolbarButton().id(STD_FILESAVE).cmd(ID_FILE_EXIT).btns_autosize().tbstate_enabled().create());
+	Toolbar::add_button(toolbar, ToolbarButton().id(STD_FILESAVE).cmd(ID_FILE_EXIT).btns_autosize().btns_dropdown().tbstate_enabled().create());
 	Toolbar::set_text(toolbar, IDS_TOOLBAR);
 	Toolbar::create(toolbar, imageList);
+	// Drop down menu on toolbar
+	Window::connect_notify<TBN_DROPDOWN>(window, [&toolbar,&window](HWND hwnd, WPARAM wp, LPARAM lp) {
+		// Who called us? ((LPNMTOOLBAR)lp)->iItem
+		auto tb_dropdown_list = Menu::init_submenu();
+		Menu::string(tb_dropdown_list, L"&File1.doc", IDM_EDITPASTEFOO);
+		Menu::string(tb_dropdown_list, L"&File2.doc", IDM_EDITPASTEFOO1);		
+		Menu::toolbar_dropdown(toolbar.hwnd, ((LPNMTOOLBAR)lp)->iItem, tb_dropdown_list);
+		return FALSE;
+	});
 
 	// Menu
 	ImageList menuCheckBox;
@@ -111,6 +120,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		.lr_shared()
 		.lr_loadtransparent()
 		.load();
+
 	auto menubar = Menu::init(window.hwnd);
 	auto filemenu = Menu::init_submenu();
 	Menu::string(filemenu, L"&New", ID_FILE_NEW);
@@ -130,6 +140,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	menubar.create();
 	app.run();
 
+	Window::destroy(window);
 	auto timer = Timer::init(hwnd);
 	Timer::milli(timer, 2000);
 	Timer::command(timer, ID_CMD);

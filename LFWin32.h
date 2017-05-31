@@ -403,6 +403,10 @@ private: \
 			return T();
 		}
 
+		void destroy(T&t) {
+			DestroyWindow(t.hwnd);
+		}
+
 		PROP(HICON, icon);
 		PROP(HCURSOR, cursor);
 		PROP(DWORD, menu);
@@ -753,6 +757,64 @@ private: \
 		DWORD m_state;
 	};
 
+	class PopupMenuState
+	{
+	public:
+		//Centers the shortcut menu horizontally relative to the coordinate specified by the x parameter.
+		PopupMenuState& tpm_centeralign() { m_state ^= TPM_CENTERALIGN; return *this; }
+
+		//Positions the shortcut menu so that its left side is aligned with the coordinate specified by the x parameter.
+		PopupMenuState& tpm_leftalign() { m_state ^= TPM_LEFTALIGN; return *this; }
+
+		//Positions the shortcut menu so that its right side is aligned with the coordinate specified by the x parameter
+		PopupMenuState& tpm_rightalign() { m_state ^= TPM_RIGHTALIGN; return *this; }
+
+		//Positions the shortcut menu so that its bottom side is aligned with the coordinate specified by the y parameter.
+		PopupMenuState& tpm_bottomalign() { m_state ^= TPM_BOTTOMALIGN; return *this; }
+
+		//Positions the shortcut menu so that its top side is aligned with the coordinate specified by the y parameter.
+		PopupMenuState& tpm_topalign() { m_state ^= TPM_TOPALIGN; return *this; }
+
+		//Centers the shortcut menu vertically relative to the coordinate specified by the y parameter.
+		PopupMenuState& tpm_vcenteralign() { m_state ^= TPM_VCENTERALIGN; return *this; }
+
+		//The function does not send notification messages when the user clicks a menu item.
+		PopupMenuState& tpm_nonotify() { m_state ^= TPM_NONOTIFY; return *this; }
+
+		//The function returns the menu item identifier of the user's selection in the return value.
+		PopupMenuState& tpm_returncmd() { m_state ^= TPM_RETURNCMD; return *this; }
+
+		//The user can select menu items with only the left mouse button.
+		PopupMenuState& tpm_leftbutton() { m_state ^= TPM_LEFTBUTTON; return *this; }
+
+		//The user can select menu items with both the left and right mouse buttons.
+		PopupMenuState& tpm_rightbutton() { m_state ^= TPM_RIGHTBUTTON; return *this; }
+
+		//Animates the menu from right to left.
+		PopupMenuState& tpm_horneganimation() { m_state ^= TPM_HORNEGANIMATION; return *this; }
+
+		//Animates the menu from left to right.
+		PopupMenuState& tpm_horposanimation() { m_state ^= TPM_HORPOSANIMATION; return *this; }
+
+		//Displays menu without animation.
+		PopupMenuState& tpm_noanimation() { m_state ^= TPM_NOANIMATION; return *this; }
+
+		//Animates the menu from bottom to top.
+		PopupMenuState& tpm_verneganimation() { m_state ^= TPM_VERNEGANIMATION; return *this; }
+
+		//Animates the menu from top to bottom.
+		PopupMenuState& tpm_verposanimation() { m_state ^= TPM_VERPOSANIMATION; return *this; }
+
+		//If the menu cannot be shown at the specified location without overlapping the excluded rectangle, the system tries to accommodate the requested horizontal alignment before the requested vertical alignment.
+		PopupMenuState& tpm_horizontal() { m_state ^= TPM_HORIZONTAL; return *this; }
+
+		//If the menu cannot be shown at the specified location without overlapping the excluded rectangle, the system tries to accommodate the requested vertical alignment before the requested horizontal alignment.
+		PopupMenuState& tpm_vertical() { m_state ^= TPM_VERTICAL; return *this; }
+
+		DWORD state() const { return m_state; }
+	private:
+		DWORD m_state;
+	};
 	namespace Menu {
 		struct T
 		{
@@ -769,6 +831,10 @@ private: \
 			t.menu = CreateMenu();
 			TRACE(t.menu == nullptr, "Could not create menu %d", GetLastError());
 			return t;
+		}
+
+		void destroy(T&t) {
+			DestroyMenu(t.menu);
 		}
 
 		T init_submenu() {
@@ -835,6 +901,21 @@ private: \
 			CheckMenuItem(t.menu, cmd, MF_BYCOMMAND | MF_CHECKED);
 		}
 
+		void toolbar_dropdown(HWND toolbar, const int cmd, const Menu::T& t) {
+			RECT rc;
+			SendMessage(toolbar,TB_GETRECT, cmd, (LPARAM)&rc);
+			MapWindowPoints(toolbar, HWND_DESKTOP, (LPPOINT)&rc, 2);
+			TPMPARAMS tpm;
+			tpm.cbSize = sizeof(TPMPARAMS);
+			tpm.rcExclude = rc;
+			TrackPopupMenuEx(t.menu, 
+							 PopupMenuState()
+							 .tpm_leftalign()
+							 .tpm_leftbutton()
+							 .tpm_vertical()
+							 .state(), rc.left, rc.bottom, toolbar, &tpm);
+		}
+
 		// Colour images for menu items - looks cool
 		void set_image(const HWND hwnd, T&t, const int cmd, ImageList& imageList, const int idx = 0) {
 			// Get Device Context for Window client area 
@@ -890,11 +971,6 @@ private: \
 			// Call as required by Windows. See http://msdn.microsoft.com/en-us/library/windows/desktop/ms648001(v=vs.85).aspx
 			::DrawMenuBar(hwnd);
 		}
-
-		void show_popup() {
-
-		}
-
 
 		void set_sub_menu(T&t, const T& submenu, const int pos, LPWSTR name) {
 			auto ret = AppendMenu(t.menu, MF_STRING | MF_POPUP, 0, name);
